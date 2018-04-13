@@ -30,7 +30,6 @@ module MoneyRails
           @raw_value = @raw_value.to_s.gsub(symbol, "")
         end
 
-        normalize_raw_value!
         super(@record, @attr, normalized_raw_value)
 
         if stringy and record_does_not_have_error?
