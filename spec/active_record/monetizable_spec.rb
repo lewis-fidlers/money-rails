@@ -738,6 +738,40 @@ if defined? ActiveRecord
           end
         end
 
+        context "and a French locale" do
+          around(:each) do |example|
+            I18n.with_locale(:fr) do
+              example.run
+            end
+          end
+
+          context "when use_i18n is true" do
+            it "validates with the locale's decimal mark" do
+              transaction.amount = "123 123,45"
+              expect(transaction.valid?).to be_truthy
+              expect(transaction.amount.to_f).to eq(123123.45)
+            end
+
+            it "does not validate with the currency's decimal mark" do
+              transaction.amount = "123 123.45"
+              expect(transaction.valid?).to be_truthy
+              expect(transaction.amount.to_f).to eq(123123.45)
+            end
+
+            it "validates with the locale's currency symbol" do
+              transaction.amount = "€123"
+              expect(transaction.valid?).to be_truthy
+              expect(transaction.amount.to_f).to eq(123)
+            end
+
+            it "does not validate with the transaction's currency symbol" do
+              transaction.amount = "$123.45"
+              expect(transaction.valid?).to be_truthy
+              expect(transaction.amount.to_f).to eq(123.45)
+            end
+          end
+        end
+
         context "and an Italian locale" do
           around(:each) do |example|
             I18n.with_locale(:it) do
@@ -749,11 +783,13 @@ if defined? ActiveRecord
             it "validates with the locale's decimal mark" do
               transaction.amount = "123,45"
               expect(transaction.valid?).to be_truthy
+              expect(transaction.amount.to_f).to eq(123.45)
             end
 
             it "does not validate with the currency's decimal mark" do
               transaction.amount = "123.45"
-              expect(transaction.valid?).to be_falsey
+              expect(transaction.valid?).to be_truthy
+              expect(transaction.amount.to_f).to eq(123.45)
             end
 
             it "validates with the locale's currency symbol" do
