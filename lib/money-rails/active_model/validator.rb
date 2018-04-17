@@ -112,6 +112,10 @@ module MoneyRails
         end
       end
 
+      # @raw_value = @raw_value.to_s
+      #   .gsub(thousands_separator, '')
+      #   .gsub(decimal_mark, '.')
+      #   .gsub(/[\s_]/, '')
       # Remove thousands separators, normalize decimal mark,
       # remove whitespaces and _ (E.g. 99 999 999 or 12_300_200.20)
       # This is needed for numericality validations, not for money validations
@@ -124,12 +128,13 @@ module MoneyRails
           .gsub(thousands_separator, '.')
           .gsub(decimal_mark, '.')
           .gsub(/[\s_]/, '')
-        decimal_part = @normalized_raw_value.scan(/.\d{1,2}$/).first
+
+        decimal_part = @normalized_raw_value.scan(/\.\d{1,2}$/).first
 
         @normalized_raw_value = @normalized_raw_value
-          .gsub(/.\d{1,2}$/, '')
+          .gsub(/\.\d{1,2}$/, '')
           .gsub('.', '')
-          .concat(decimal_part)
+          .concat(decimal_part || ".00")
       end
 
       def localized_raw_value

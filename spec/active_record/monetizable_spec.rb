@@ -241,12 +241,10 @@ if defined? ActiveRecord
         expect(product.errors[:price].first).to match(/Got 12,23.24/)
       end
 
-      it "fails validation with the proper error message if money value has thousand char after decimal mark" do
+      it "Doesn\'t fail validation if money value has thousand char after decimal mark" do
         product.price = "1.234,56"
-        expect(product.save).to be_falsey
-        expect(product.errors[:price].size).to eq(1)
-        expect(product.errors[:price].first).to match(/must be a valid/)
-        expect(product.errors[:price].first).to match(/Got 1.234,56/)
+        expect(product.save).to be_truthy
+        expect(product.price.to_f).to eq(1234.56)
       end
 
       it "allows an empty string as the thousands separator" do
@@ -751,9 +749,10 @@ if defined? ActiveRecord
               expect(transaction.valid?).to be_truthy
             end
 
-            it "does not validate with the currency's decimal mark" do
+            it "validates with the currency's decimal mark" do
               transaction.amount = "123.45"
-              expect(transaction.valid?).to be_falsey
+              expect(transaction.valid?).to be_truthy
+              expect(transaction.amount.to_f).to eq(123.45)
             end
 
             it "validates with the locale's currency symbol" do
@@ -777,9 +776,10 @@ if defined? ActiveRecord
               end
             end
 
-            it "does not validate with the locale's decimal mark" do
+            it "validates with the locale's decimal mark" do
               transaction.amount = "123,45"
-              expect(transaction.valid?).to be_falsey
+              expect(transaction.valid?).to be_truthy
+              expect(transaction.amount.to_f).to eq(123.45)
             end
 
             it "validates with the currency's decimal mark" do
@@ -854,7 +854,7 @@ if defined? ActiveRecord
         end
 
         it "preserves user input if validation fails" do
-          product.price = '14,0'
+          product.price = '1.4,0'
 
           expect(product.save).to be_falsy
           expect(product.read_monetized(:price, :price_cents).to_s).to eq('14,0')
