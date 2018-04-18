@@ -1,8 +1,11 @@
+require 'money-rails/helpers/string_parser.rb'
+
 module MoneyRails
   module ActiveModel
     class MoneyValidator < ::ActiveModel::Validations::NumericalityValidator
       def validate_each(record, attr, _value)
         reset_memoized_variables!
+
         @record = record
         @attr = attr
 
@@ -22,23 +25,20 @@ module MoneyRails
 
         return if options[:allow_nil] && @raw_value.nil?
 
-        # Set this before we modify @raw_value below.
-        stringy = @raw_value.present? && !@raw_value.is_a?(Numeric) && !@raw_value.is_a?(Money)
-
-        if stringy
-          # remove currency symbol
-          @raw_value = @raw_value.to_s.gsub(symbol, "")
-        end
-
         normalize_raw_value!
+
         super(@record, @attr, @raw_value)
 
-        if stringy and record_does_not_have_error?
+        if parsing_string? and record_does_not_have_error?
           add_error if
             value_has_too_many_decimal_points or
             thousand_separator_after_decimal_mark or
             invalid_thousands_separation
         end
+      end
+
+      def parsing_string?
+        @_parsing_string ||= @raw_value.present? && !@raw_value.is_a?(Numeric) && !@raw_value.is_a?(Money)
       end
 
       private
@@ -50,7 +50,7 @@ module MoneyRails
 
       def reset_memoized_variables!
         [:currency, :decimal_mark, :thousands_separator, :symbol,
-          :abs_raw_value, :decimal_pieces, :pieces_array].each do |var_name|
+          :abs_raw_value, :decimal_pieces, :pieces_array, :parsing_string].each do |var_name|
           ivar_name = :"@_#{var_name}"
           remove_instance_variable(ivar_name) if instance_variable_defined?(ivar_name)
         end
@@ -90,7 +90,7 @@ module MoneyRails
       end
 
       def decimal_pieces
-        @_decimal_pieces ||= abs_raw_value.split(decimal_mark)
+        @_decimal_pieces ||= @raw_value.split('.')
       end
 
       def value_has_too_many_decimal_points
@@ -120,10 +120,14 @@ module MoneyRails
         # many places and relies on the original @raw_value.
         abs_raw_value
 
-        @raw_value = @raw_value.to_s
-          .gsub(thousands_separator, '')
-          .gsub(decimal_mark, '.')
-          .gsub(/[\s_]/, '')
+        if parsing_string?
+          @raw_value = StringParser.new(@raw_value).parse
+        else
+          @raw_value = @raw_value.to_s
+            .gsub(thousands_separator, '')
+            .gsub(decimal_mark, '.')
+            .gsub(/[\s_]/, '')
+        end
       end
     end
   end

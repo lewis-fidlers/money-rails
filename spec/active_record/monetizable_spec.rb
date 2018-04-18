@@ -15,6 +15,44 @@ if defined? ActiveRecord
                      lambda_price_cents: 4000)
     end
 
+    describe 'locale number parsing' do
+      locales = %i(en fr nl)
+      Money.use_i18n = true
+
+      locales.each do |locale|
+        describe "works with normalized string inputs for #{locale}" do
+
+          around(:each) do |example|
+            I18n.with_locale(locale) do
+              example.run
+            end
+          end
+
+          string_input_permutations = [
+            "1 000 456.50",
+            "1 000 456,50",
+            "1,000,456.50",
+            "1.000.456,50",
+            "1 000 456.5",
+            "1 000 456,5",
+            "1,000,456.5",
+            "1.000.456,5",
+            "1.000.456,50 €",
+            "€ 1,000,456.50",
+          ]
+
+          string_input_permutations.each do |permutation|
+            it "parses #{permutation} to 1000456.50" do
+              transaction = Transaction.new(tax: 60)
+              transaction.amount = permutation
+              expect(transaction.valid?).to be_truthy
+              expect(transaction.amount.to_f).to eq(1000456.50)
+            end
+          end
+        end
+      end
+    end
+
     describe ".monetize" do
       let(:service) do
         Service.create(charge_cents: 2000, discount_cents: 120)
@@ -735,40 +773,6 @@ if defined? ActiveRecord
             t = Transaction.new(amount_cents: 2500, currency: "CAD")
             t.optional_amount = nil
             expect(t.currency).to eq("CAD")
-          end
-        end
-
-        context "and a French locale" do
-          around(:each) do |example|
-            I18n.with_locale(:fr) do
-              example.run
-            end
-          end
-
-          context "when use_i18n is true" do
-            it "validates with the locale's decimal mark" do
-              transaction.amount = "123 123,45"
-              expect(transaction.valid?).to be_truthy
-              expect(transaction.amount.to_f).to eq(123123.45)
-            end
-
-            it "does not validate with the currency's decimal mark" do
-              transaction.amount = "123 123.45"
-              expect(transaction.valid?).to be_truthy
-              expect(transaction.amount.to_f).to eq(123123.45)
-            end
-
-            it "validates with the locale's currency symbol" do
-              transaction.amount = "€123"
-              expect(transaction.valid?).to be_truthy
-              expect(transaction.amount.to_f).to eq(123)
-            end
-
-            it "does not validate with the transaction's currency symbol" do
-              transaction.amount = "$123.45"
-              expect(transaction.valid?).to be_truthy
-              expect(transaction.amount.to_f).to eq(123.45)
-            end
           end
         end
 
