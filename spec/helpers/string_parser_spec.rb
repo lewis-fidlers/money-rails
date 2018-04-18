@@ -34,7 +34,7 @@ describe StringParser, :helper do
 
           puts "Current locale = #{I18n.locale}"
           result = StringParser.new(permutation).parse
-          expect(result.to_f).to eq("1000456.50".to_f)
+          expect(result).to eq("1000456.50")
         end
       end
     end

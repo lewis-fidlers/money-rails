@@ -25,6 +25,8 @@ class StringParser
     normalized_integer_part = integer_part.gsub(/(\.|,)/, '')
     normalized_decimal_part = decimal_part.gsub(/(\.|,)/, '.')
 
+    normalized_decimal_part.concat('0') if normalized_decimal_part.length == 2
+
     @normalized_raw_value = "%s%s" % [normalized_integer_part, normalized_decimal_part]
     @normalized_raw_value.gsub!(/[\s_]/, '')
     @normalized_raw_value
