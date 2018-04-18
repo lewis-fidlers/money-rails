@@ -40,16 +40,16 @@ describe StringParser, :helper do
     end
   end
 
-  describe ".strip_unwanted_chars" do
+  describe ".sanitize_input" do
     it "strips everything except digits, points commas and spaces" do
       parser = StringParser.new("123 456.7x8_9,4!@0")
-      parser.strip_unwanted_chars!
+      parser.sanitize_input!
       expect(parser.raw_value).to eq("123 456.789,40")
     end
 
     it "strips everything except digits, points commas and spaces" do
       parser = StringParser.new("1.000.456,50 €")
-      parser.strip_unwanted_chars!
+      parser.sanitize_input!
       expect(parser.raw_value).to eq("1.000.456,50")
     end
   end

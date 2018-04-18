@@ -9,12 +9,12 @@ class StringParser
 
   # returns a number in this format: 12000.00
   def parse
-    strip_unwanted_chars!
+    sanitize_input!
     normalize_raw_value
   end
 
   # Leaves only numbers and known separators
-  def strip_unwanted_chars!
+  def sanitize_input!
     @raw_value = @raw_value
       .gsub(/[^\d\.\, ]/, "")
       .strip
